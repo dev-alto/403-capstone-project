@@ -1,0 +1,28 @@
+{
+    "workbench.colorCustomizations": {
+        "terminal.background": "#00000000",
+        "minimap.background": "#00000000",
+        "scrollbar.shadow": "#00000000",
+        "editor.foreground": "#ffffff",
+        "activityBar.foreground": "#ffffff",
+        "activityBarBadge.foreground": "#ffffff",
+        "list.activeSelectionForeground": "#ffffff",
+        "statusBar.foreground": "#ffffff",
+        "statusBar.debuggingForeground": "#ffffff",
+        "statusBar.noFolderForeground": "#ffffff",
+        "statusBarItem.remoteForeground": "#ffffff",
+        "menu.selectionForeground": "#ffffff",
+        "button.foreground": "#ffffff",
+        "button.secondaryForeground": "#ffffff",
+        "input.foreground": "#ffffff",
+        "inputOption.activeForeground": "#ffffff",
+        "panelTitle.activeForeground": "#ffffff",
+        "terminalCursor.foreground": "#ffffff",
+        "badge.foreground": "#ffffff",
+        "terminal.ansiWhite": "#ffffff",
+        "terminal.ansiBrightWhite": "#ffffff",
+        "tab.activeForeground": "#ffffff",
+        "tab.hoverForeground": "#ffffff",
+        "breadcrumb.focusForeground": "#ffffff"
+    }
+}
