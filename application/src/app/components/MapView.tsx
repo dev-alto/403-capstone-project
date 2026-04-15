@@ -21,7 +21,7 @@ export default function MapView({ places }: MapViewProps) {
 
   return (
     <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
-      <div className="w-full h-96 rounded-xl shadow-lg overflow-hidden">
+      <div className="w-full h-full rounded-xl shadow-lg overflow-hidden">
         <Map defaultCenter={center} defaultZoom={12} mapId="27313780480a6d0eeb8cc810">
           {places.map((place, index) => (
             <AdvancedMarker
