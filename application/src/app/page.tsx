@@ -12,6 +12,7 @@ import {
   type ItineraryRequest,
   type ItineraryResponse,
   type ItineraryStop,
+  isTransportMode,
   type TransportMode,
 } from '@/lib/itinerary';
 
@@ -77,14 +78,14 @@ const categoryStyles: Record<
 };
 
 const initialForm: ItineraryRequest = {
-  location: 'San Francisco, CA',
+  location: 'Alamo Square, San Francisco, CA',
   startTime: '11:00',
-  endTime: '16:00',
+  endTime: '18:00',
   budget: '$$',
-  categories: ['restaurants', 'cultural', 'outdoors'],
+  categories: ['restaurants', 'cultural', 'entertainment', 'outdoors'],
   radiusMiles: 5,
-  stopCount: 3,
-  transport: 'walking',
+  stopCount: 5,
+  transport: 'driving',
 };
 
 const defaultMapCenter = { lat: 37.7749, lng: -122.4194 };
@@ -167,6 +168,8 @@ export default function Home() {
   const [isHistoryReady, setIsHistoryReady] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [directionsLine, setDirectionsLine] = useState<LineString | null>(null);
+  const [isDirectionsLoading, setIsDirectionsLoading] = useState(false);
+  const [routeRefreshKey, setRouteRefreshKey] = useState(0);
   const [routeNotice, setRouteNotice] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -218,7 +221,7 @@ export default function Home() {
   }, [itinerary]);
 
   const pathGeoJson = useMemo<FeatureCollection<LineString> | null>(() => {
-    const line = directionsLine ?? directPathLine;
+    const line = directionsLine ?? (isDirectionsLoading ? null : directPathLine);
 
     if (!line) {
       return null;
@@ -234,7 +237,7 @@ export default function Home() {
         },
       ],
     };
-  }, [directionsLine, directPathLine]);
+  }, [directionsLine, directPathLine, isDirectionsLoading]);
 
   const radiusGeoJson = useMemo<FeatureCollection<Polygon> | null>(() => {
     if (!itinerary) {
@@ -271,6 +274,7 @@ export default function Home() {
   useEffect(() => {
     if (!itinerary || !mapboxToken) {
       setDirectionsLine(null);
+      setIsDirectionsLoading(false);
       setRouteNotice('');
       return;
     }
@@ -280,7 +284,7 @@ export default function Home() {
     loadDirectionsRoute(itinerary, mapboxToken, abortController.signal);
 
     return () => abortController.abort();
-  }, [itinerary, mapboxToken]);
+  }, [itinerary, mapboxToken, routeRefreshKey]);
 
   async function loadDirectionsRoute(
     currentItinerary: ItineraryResponse,
@@ -288,23 +292,24 @@ export default function Home() {
     signal: AbortSignal,
   ) {
     setDirectionsLine(null);
-    setRouteNotice('');
+
+    const routingNotice =
+      currentItinerary.request.transport === 'transit'
+        ? 'Transit routing is not available in Mapbox Directions, so the map is showing walking directions.'
+        : '';
+
+    setRouteNotice(routingNotice);
 
     const profile = mapboxProfileForTransport(currentItinerary.request.transport);
     const coordinates = currentItinerary.stops.map((stop) => stop.location);
 
-    if (!profile) {
-      setRouteNotice(
-        'Transit routing is not available in Mapbox Directions, so the map is showing a direct path.',
-      );
-      return;
-    }
-
     if (coordinates.length < 2) {
+      setIsDirectionsLoading(false);
       return;
     }
 
     if (coordinates.length > 25) {
+      setIsDirectionsLoading(false);
       setRouteNotice(
         'The map is showing a direct path because Mapbox Directions supports up to 25 stop waypoints.',
       );
@@ -324,6 +329,7 @@ export default function Home() {
     url.searchParams.set('access_token', accessToken);
 
     try {
+      setIsDirectionsLoading(true);
       const response = await fetch(url, { signal });
       const payload = (await response.json()) as MapboxDirectionsResponse;
 
@@ -334,7 +340,7 @@ export default function Home() {
       }
 
       setDirectionsLine(payload.routes[0].geometry);
-      setRouteNotice('');
+      setRouteNotice(routingNotice);
     } catch (caughtError) {
       if (caughtError instanceof DOMException && caughtError.name === 'AbortError') {
         return;
@@ -344,6 +350,8 @@ export default function Home() {
       setRouteNotice(
         'The map is showing a direct path because Mapbox Directions could not route these stops.',
       );
+    } finally {
+      setIsDirectionsLoading(false);
     }
   }
 
@@ -355,6 +363,7 @@ export default function Home() {
     try {
       // clear stale route state before asking for a new itinerary
       setDirectionsLine(null);
+      setIsDirectionsLoading(false);
       setRouteNotice('');
       const response = await fetch('/api/itinerary', {
         method: 'POST',
@@ -373,6 +382,7 @@ export default function Home() {
 
       setItinerary(generatedItinerary);
       setHistory((currentHistory) => addHistoryItem(currentHistory, generatedItinerary));
+      setRouteRefreshKey((currentKey) => currentKey + 1);
       setIsHistoryOpen(false);
     } catch (caughtError) {
       setError(
@@ -471,10 +481,14 @@ export default function Home() {
   }
 
   function restoreHistoryItem(item: HistoryItem) {
-    setItinerary(item.itinerary);
-    setForm(item.itinerary.request);
+    const restoredItinerary = normalizeRestoredItinerary(item.itinerary);
+
+    setItinerary(restoredItinerary);
+    setForm(restoredItinerary.request);
     setDirectionsLine(null);
+    setIsDirectionsLoading(false);
     setRouteNotice('');
+    setRouteRefreshKey((currentKey) => currentKey + 1);
     setError('');
     setIsHistoryOpen(false);
   }
@@ -499,7 +513,7 @@ export default function Home() {
             initialViewState={{
               longitude: mapCenter.lng,
               latitude: mapCenter.lat,
-              zoom: itinerary ? 12.4 : 16,
+              zoom: itinerary ? 12.4 : 17.23,
               pitch: itinerary ? 18 : 59.41,
               bearing: itinerary ? 0 : -72.78,
             }}
@@ -602,7 +616,7 @@ export default function Home() {
 
       <section
         className={`absolute bottom-0 left-0 right-0 z-20 max-h-[86vh] overflow-y-auto ${
-          itinerary ? 'px-0 pb-0' : 'px-3 pb-3 md:px-6 md:pb-5'
+          itinerary ? 'px-0' : 'px-3 md:px-6'
         }`}
       >
         {!itinerary ? (
@@ -612,14 +626,14 @@ export default function Home() {
           >
             <div className='grid gap-3 md:grid-cols-[minmax(220px,1.4fr)_repeat(2,minmax(120px,0.45fr))]'>
               <label className='flex flex-col gap-1 text-sm font-semibold text-neutral-700'>
-                Location
+                Starting Location
                 <input
                   value={form.location}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, location: event.target.value }))
                   }
                   className='h-11 rounded-lg border border-neutral-300 bg-neutral-50 px-3 text-base font-medium text-neutral-950 outline-none transition focus:border-neutral-900 focus:bg-white'
-                  placeholder='San Francisco, CA'
+                  placeholder='Alamo Square, San Francisco, CA'
                 />
               </label>
 
@@ -699,7 +713,7 @@ export default function Home() {
               </label>
 
               <label className='flex flex-col gap-1 text-sm font-semibold text-neutral-700'>
-                Radius
+                Radius (miles)
                 <input
                   value={form.radiusMiles}
                   onChange={(event) =>
@@ -783,6 +797,7 @@ export default function Home() {
             onBack={() => {
               setItinerary(null);
               setDirectionsLine(null);
+              setIsDirectionsLoading(false);
               setRouteNotice('');
               setError('');
             }}
@@ -828,8 +843,8 @@ function ResultsPanel({
           setIsExpanded(false);
         }
       }}
-      className={`flex w-full flex-col gap-4 overflow-y-auto rounded-t-2xl border border-neutral-200 bg-white p-4 shadow-2xl transition-[max-height] duration-300 md:p-5 ${
-        isExpanded ? 'max-h-[86vh]' : 'max-h-[20rem]'
+      className={`flex w-full flex-col gap-4 overflow-y-auto rounded-t-2xl border border-neutral-200 bg-white/88 p-4 shadow-2xl backdrop-blur-md transition-[max-height] duration-300 md:p-5 ${
+        isExpanded ? 'max-h-[86vh]' : 'max-h-[16rem]'
       }`}
     >
       <div className='flex flex-col gap-3 md:flex-row md:items-start md:justify-between'>
@@ -850,12 +865,17 @@ function ResultsPanel({
         </button>
       </div>
 
-      <div className='rounded-xl border border-sky-200 bg-sky-50 px-3 py-2'>
-        <p className='text-xs font-bold uppercase text-sky-700'>Route vibe</p>
+      {isExpanded && (
+        <div className='rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 [&>p:nth-child(2)]:hidden'>
+          <p className='text-xs font-bold uppercase text-sky-700'>
+            Description of this plan
+          </p>
+        <p className='text-xs font-bold uppercase text-sky-700'>📌 Description of this Plan</p>
         <p className='mt-1 text-sm font-semibold leading-5 text-neutral-800'>
           {routeSummary}
         </p>
-      </div>
+        </div>
+      )}
 
       <div className='flex gap-4 overflow-x-auto pb-1'>
         {itinerary.stops.map((stop, index) => (
@@ -868,12 +888,16 @@ function ResultsPanel({
               isFirst={index === 0}
               isLast={index === itinerary.stops.length - 1}
             />
-            <StopCard stop={stop} onSelect={selectStop} />
+            <StopCard
+              stop={stop}
+              isExpanded={isExpanded}
+              onSelect={selectStop}
+            />
           </div>
         ))}
       </div>
 
-      {itinerary.notes.length > 0 && (
+      {isExpanded && itinerary.notes.length > 0 && (
         <div className='flex flex-wrap gap-2'>
           {itinerary.notes.map((note) => (
             <span
@@ -1010,7 +1034,7 @@ function TimelineStop({
   isLast: boolean;
 }) {
   return (
-    <div className='relative mb-2 h-20'>
+    <div className='relative mb-4 h-20'>
       <div
         className='absolute top-4 h-2 rounded-full bg-sky-200'
         style={{
@@ -1043,9 +1067,11 @@ function TimelineStop({
 
 function StopCard({
   stop,
+  isExpanded,
   onSelect,
 }: {
   stop: ItineraryStop;
+  isExpanded: boolean;
   onSelect: (stop: ItineraryStop) => void;
 }) {
   const styles = categoryStyles[stop.category];
@@ -1067,12 +1093,6 @@ function StopCard({
       }}
       className={`w-full cursor-pointer rounded-2xl border-2 p-3 text-left shadow-sm outline-none transition hover:-translate-y-1 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-neutral-900 md:p-4 ${styles.card}`}
     >
-      <div className='mb-2 flex items-start justify-end'>
-        <span className={`rounded-lg border px-3 py-1 text-sm font-bold ${styles.chip}`}>
-          {stop.categoryLabel}
-        </span>
-      </div>
-
       <p className='mb-1 text-sm font-semibold text-neutral-500'>
         {stop.travelFromPreviousMiles} miles to
       </p>
@@ -1090,11 +1110,13 @@ function StopCard({
         <p className='shrink-0 text-lg font-bold text-neutral-700'>{stop.priceLabel}</p>
       </div>
 
-      <p className='mb-3 min-h-10 text-sm font-medium leading-5 text-neutral-700'>
-        {stop.description}
-      </p>
+      {isExpanded && (
+        <p className='mb-3 min-h-10 text-sm font-medium leading-5 text-neutral-700'>
+          {stop.description}
+        </p>
+      )}
 
-      {stop.descriptionAttribution && (
+      {isExpanded && stop.descriptionAttribution && (
         <p className='mb-3 text-xs font-semibold text-neutral-500'>
           {stop.descriptionAttribution}
         </p>
@@ -1140,17 +1162,23 @@ function StopCard({
         </div>
       )}
 
-      {stop.googleMapsUri && (
-        <a
-          href={stop.googleMapsUri}
-          target='_blank'
-          rel='noreferrer'
-          onClick={(event) => event.stopPropagation()}
-          className='mt-4 inline-flex text-sm font-bold text-neutral-700 underline underline-offset-4'
-        >
-          Open in Google Maps
-        </a>
-      )}
+      <div className='mt-4 flex items-center justify-between gap-3'>
+        <span className={`rounded-lg border px-3 py-1 text-sm font-bold ${styles.chip}`}>
+          {stop.categoryLabel}
+        </span>
+
+        {stop.googleMapsUri && (
+          <a
+            href={stop.googleMapsUri}
+            target='_blank'
+            rel='noreferrer'
+            onClick={(event) => event.stopPropagation()}
+            className='inline-flex text-sm font-bold text-neutral-700 underline underline-offset-4'
+          >
+            Open in Google Maps
+          </a>
+        )}
+      </div>
     </article>
   );
 }
@@ -1223,6 +1251,23 @@ function readHistoryItems(): HistoryItem[] {
   }
 }
 
+function normalizeRestoredItinerary(itinerary: ItineraryResponse): ItineraryResponse {
+  // clone restored history so effects rerun reliably
+  const transport = isTransportMode(itinerary.request.transport)
+    ? itinerary.request.transport
+    : 'walking';
+  const request = {
+    ...initialForm,
+    ...itinerary.request,
+    transport,
+  };
+
+  return {
+    ...itinerary,
+    request,
+  };
+}
+
 function writeHistoryItems(history: HistoryItem[]) {
   if (typeof window === 'undefined') {
     return;
@@ -1269,7 +1314,7 @@ function formatHistoryDate(value: string): string {
   }).format(date);
 }
 
-function mapboxProfileForTransport(transport: TransportMode): string | null {
+function mapboxProfileForTransport(transport: TransportMode): string {
   switch (transport) {
     case 'walking':
       return 'mapbox/walking';
@@ -1278,7 +1323,7 @@ function mapboxProfileForTransport(transport: TransportMode): string | null {
     case 'biking':
       return 'mapbox/cycling';
     case 'transit':
-      return null;
+      return 'mapbox/walking';
   }
 }
 

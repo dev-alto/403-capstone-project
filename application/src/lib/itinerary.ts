@@ -1,9 +1,9 @@
 export const CATEGORY_OPTIONS = [
-  { id: 'restaurants', label: 'Restaurants' },
-  { id: 'event_centers', label: 'Event Centers' },
-  { id: 'cultural', label: 'Cultural' },
-  { id: 'entertainment', label: 'Entertainment' },
-  { id: 'outdoors', label: 'Outdoors' },
+  { id: 'restaurants', label: '🍽️ Restaurants' },
+  { id: 'event_centers', label: '⭐ Event Centers' },
+  { id: 'cultural', label: '🎋 Cultural' },
+  { id: 'entertainment', label: '🎭 Entertainment' },
+  { id: 'outdoors', label: '🌲 Outdoors' },
 ] as const;
 
 export type CategoryId = (typeof CATEGORY_OPTIONS)[number]['id'];
@@ -203,7 +203,7 @@ export function priceLevelToLabel(priceLevel?: string): string {
     case 'PRICE_LEVEL_VERY_EXPENSIVE':
       return '$$$';
     default:
-      return 'Price unavailable';
+      return '';
   }
 }
 
