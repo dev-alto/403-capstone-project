@@ -17,3 +17,21 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.itinerary-loading-bar {
+  animation: itinerary-loading 1.2s ease-in-out infinite;
+}
+
+@keyframes itinerary-loading {
+  0% {
+    transform: translateX(-110%);
+  }
+
+  50% {
+    transform: translateX(170%);
+  }
+
+  100% {
+    transform: translateX(410%);
+  }
+}
