@@ -1,14 +1,14 @@
 export const CATEGORY_OPTIONS = [
-  { id: "restaurants", label: "Restaurants" },
-  { id: "event_centers", label: "Event Centers" },
-  { id: "cultural", label: "Cultural" },
-  { id: "entertainment", label: "Entertainment" },
-  { id: "outdoors", label: "Outdoors" },
+  { id: 'restaurants', label: 'Restaurants' },
+  { id: 'event_centers', label: 'Event Centers' },
+  { id: 'cultural', label: 'Cultural' },
+  { id: 'entertainment', label: 'Entertainment' },
+  { id: 'outdoors', label: 'Outdoors' },
 ] as const;
 
-export type CategoryId = (typeof CATEGORY_OPTIONS)[number]["id"];
-export type BudgetTier = "free" | "$" | "$$" | "$$$";
-export type TransportMode = "walking" | "driving" | "transit" | "biking";
+export type CategoryId = (typeof CATEGORY_OPTIONS)[number]['id'];
+export type BudgetTier = 'free' | '$' | '$$' | '$$$';
+export type TransportMode = 'walking' | 'driving' | 'transit' | 'biking';
 
 export type Coordinates = {
   lat: number;
@@ -82,57 +82,58 @@ export type ItineraryResponse = {
 };
 
 export const CATEGORY_TYPE_MAP: Record<CategoryId, string[]> = {
+  // google places types grouped by planner category
   restaurants: [
-    "restaurant",
-    "cafe",
-    "bakery",
-    "bar",
-    "coffee_shop",
-    "fast_food_restaurant",
-    "food_court",
-    "meal_takeaway",
+    'restaurant',
+    'cafe',
+    'bakery',
+    'bar',
+    'coffee_shop',
+    'fast_food_restaurant',
+    'food_court',
+    'meal_takeaway',
   ],
   event_centers: [
-    "event_venue",
-    "convention_center",
-    "concert_hall",
-    "amphitheatre",
-    "banquet_hall",
-    "auditorium",
-    "stadium",
-    "arena",
+    'event_venue',
+    'convention_center',
+    'concert_hall',
+    'amphitheatre',
+    'banquet_hall',
+    'auditorium',
+    'stadium',
+    'arena',
   ],
   cultural: [
-    "museum",
-    "art_gallery",
-    "cultural_landmark",
-    "cultural_center",
-    "historical_place",
-    "historical_landmark",
-    "monument",
-    "performing_arts_theater",
+    'museum',
+    'art_gallery',
+    'cultural_landmark',
+    'cultural_center',
+    'historical_place',
+    'historical_landmark',
+    'monument',
+    'performing_arts_theater',
   ],
   entertainment: [
-    "amusement_center",
-    "amusement_park",
-    "aquarium",
-    "bowling_alley",
-    "casino",
-    "comedy_club",
-    "movie_theater",
-    "night_club",
-    "tourist_attraction",
-    "zoo",
+    'amusement_center',
+    'amusement_park',
+    'aquarium',
+    'bowling_alley',
+    'casino',
+    'comedy_club',
+    'movie_theater',
+    'night_club',
+    'tourist_attraction',
+    'zoo',
   ],
   outdoors: [
-    "park",
-    "garden",
-    "botanical_garden",
-    "hiking_area",
-    "national_park",
-    "state_park",
-    "beach",
-    "tourist_attraction",
+    'park',
+    'garden',
+    'botanical_garden',
+    'hiking_area',
+    'national_park',
+    'state_park',
+    'beach',
+    'tourist_attraction',
   ],
 };
 
@@ -144,6 +145,7 @@ const BUDGET_RANK: Record<BudgetTier, number> = {
 };
 
 const PRICE_LEVEL_RANK: Record<string, number> = {
+  // map google price levels into the planner budget scale
   PRICE_LEVEL_FREE: 0,
   PRICE_LEVEL_INEXPENSIVE: 1,
   PRICE_LEVEL_MODERATE: 2,
@@ -159,37 +161,49 @@ const TRANSPORT_SPEED_MPH: Record<TransportMode, number> = {
 };
 
 export function categoryLabelFor(category: CategoryId): string {
-  return CATEGORY_OPTIONS.find((option) => option.id === category)?.label ?? category;
+  return (
+    CATEGORY_OPTIONS.find((option) => option.id === category)?.label ?? category
+  );
 }
 
 export function isCategoryId(value: unknown): value is CategoryId {
   return (
-    typeof value === "string" &&
+    typeof value === 'string' &&
     CATEGORY_OPTIONS.some((option) => option.id === value)
   );
 }
 
 export function isBudgetTier(value: unknown): value is BudgetTier {
-  return value === "free" || value === "$" || value === "$$" || value === "$$$";
+  return (
+    value === 'free' ||
+    value === '$' ||
+    value === '$$' ||
+    value === '$$$'
+  );
 }
 
 export function isTransportMode(value: unknown): value is TransportMode {
-  return value === "walking" || value === "driving" || value === "transit" || value === "biking";
+  return (
+    value === 'walking' ||
+    value === 'driving' ||
+    value === 'transit' ||
+    value === 'biking'
+  );
 }
 
 export function priceLevelToLabel(priceLevel?: string): string {
   switch (priceLevel) {
-    case "PRICE_LEVEL_FREE":
-      return "Free";
-    case "PRICE_LEVEL_INEXPENSIVE":
-      return "$";
-    case "PRICE_LEVEL_MODERATE":
-      return "$$";
-    case "PRICE_LEVEL_EXPENSIVE":
-    case "PRICE_LEVEL_VERY_EXPENSIVE":
-      return "$$$";
+    case 'PRICE_LEVEL_FREE':
+      return 'Free';
+    case 'PRICE_LEVEL_INEXPENSIVE':
+      return '$';
+    case 'PRICE_LEVEL_MODERATE':
+      return '$$';
+    case 'PRICE_LEVEL_EXPENSIVE':
+    case 'PRICE_LEVEL_VERY_EXPENSIVE':
+      return '$$$';
     default:
-      return "Price unavailable";
+      return 'Price unavailable';
   }
 }
 
@@ -198,13 +212,14 @@ export function isWithinBudget(
   budget: BudgetTier,
   category: CategoryId,
 ): boolean {
+  // allow some free focused categories when price is missing
   const priceRank = priceLevel ? PRICE_LEVEL_RANK[priceLevel] : undefined;
 
-  if (typeof priceRank === "number") {
+  if (typeof priceRank === 'number') {
     return priceRank <= BUDGET_RANK[budget];
   }
 
-  return budget !== "free" || category === "outdoors" || category === "cultural";
+  return budget !== 'free' || category === 'outdoors' || category === 'cultural';
 }
 
 export function milesToMeters(miles: number): number {
@@ -212,6 +227,7 @@ export function milesToMeters(miles: number): number {
 }
 
 export function haversineMiles(from: Coordinates, to: Coordinates): number {
+  // compute straight line distance between two coordinates
   const earthRadiusMiles = 3958.8;
   const deltaLat = toRadians(to.lat - from.lat);
   const deltaLng = toRadians(to.lng - from.lng);
@@ -232,12 +248,13 @@ export function estimateTravelMinutes(
   distanceMiles: number,
   transport: TransportMode,
 ): number {
+  // estimate travel from average speed plus a small buffer
   if (distanceMiles <= 0.05) {
     return 0;
   }
 
   const travelMinutes = (distanceMiles / TRANSPORT_SPEED_MPH[transport]) * 60;
-  const bufferMinutes = transport === "walking" ? 3 : 5;
+  const bufferMinutes = transport === 'walking' ? 3 : 5;
 
   return roundUpToFive(Math.max(5, travelMinutes + bufferMinutes));
 }
@@ -254,13 +271,14 @@ export function timeStringToMinutes(time: string): number | null {
 
 export function minutesToDisplayTime(totalMinutes: number): string {
   const minutesInDay = 24 * 60;
-  const wrapped = ((Math.round(totalMinutes) % minutesInDay) + minutesInDay) % minutesInDay;
+  const wrapped =
+    ((Math.round(totalMinutes) % minutesInDay) + minutesInDay) % minutesInDay;
   const hours = Math.floor(wrapped / 60);
   const minutes = wrapped % 60;
-  const period = hours >= 12 ? "PM" : "AM";
+  const period = hours >= 12 ? 'PM' : 'AM';
   const displayHours = hours % 12 === 0 ? 12 : hours % 12;
 
-  return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
+  return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
 }
 
 export function roundMiles(miles: number): number {
@@ -270,8 +288,9 @@ export function roundMiles(miles: number): number {
 export function buildScheduledStops(
   stops: PlaceCandidate[],
   center: Coordinates,
-  request: Pick<ItineraryRequest, "startTime" | "endTime" | "transport">,
+  request: Pick<ItineraryRequest, 'startTime' | 'endTime' | 'transport'>,
 ): ItineraryStop[] {
+  // divide available trip time across selected stops
   const startMinutes = timeStringToMinutes(request.startTime) ?? 0;
   const endMinutes = timeStringToMinutes(request.endTime) ?? startMinutes + 180;
   const segmentTravel = stops.map((stop, index) => {
@@ -284,11 +303,19 @@ export function buildScheduledStops(
     };
   });
 
-  const totalTravel = segmentTravel.reduce((sum, segment) => sum + segment.minutes, 0);
-  const availableStopMinutes = Math.max(20 * stops.length, endMinutes - startMinutes - totalTravel);
+  const totalTravel = segmentTravel.reduce(
+    (sum, segment) => sum + segment.minutes,
+    0,
+  );
+  const availableStopMinutes = Math.max(
+    20 * stops.length,
+    endMinutes - startMinutes - totalTravel,
+  );
   const dwellMinutes = Math.max(
     20,
-    roundDownToFive(Math.min(90, availableStopMinutes / Math.max(1, stops.length))),
+    roundDownToFive(
+      Math.min(90, availableStopMinutes / Math.max(1, stops.length)),
+    ),
   );
 
   let cursor = startMinutes;
