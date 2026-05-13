@@ -183,13 +183,26 @@ export default function Home() {
               {/* TITLE */}
               <div className="flex items-center justify-between">
 
-                <h2 className="text-2xl font-bold text-neutral-800">
-                  Your Itinerary
-                </h2>
+                <div>
 
-                <p className="text-sm text-neutral-500">
-                  Optimized route for your trip
-                </p>
+                  <h2 className="text-2xl font-bold text-neutral-800">
+                    Your Itinerary
+                  </h2>
+
+                  <p className="text-sm text-neutral-500">
+                    Optimized route for your trip
+                  </p>
+
+                </div>
+
+                {/* BACK BUTTON */}
+                <button
+                  onClick={() => setShowResults(false)}
+                  className="bg-neutral-200 hover:bg-neutral-300 px-4 py-2 rounded-xl font-medium transition"
+                >
+                  ← Back
+                </button>
+
               </div>
 
               {/* TIMELINE */}
@@ -240,7 +253,7 @@ export default function Home() {
                   </p>
 
                   <img
-                    src="https://images.unsplash.com/..."
+                    src="https://images.pexels.com/photos/67468/pexels-photo-67468.jpeg"
                     className="w-full h-[100px] object-cover rounded-xl"
                   />
 
@@ -266,7 +279,7 @@ export default function Home() {
                   </div>
 
                   <h3 className="text-xl font-bold text-neutral-800">
-                    Salesforce Park
+                    Golden Gate bridge
                   </h3>
 
                   <p className="text-sm text-neutral-500">
@@ -274,12 +287,12 @@ export default function Home() {
                   </p>
 
                   <img
-                    src="https://images.unsplash.com/..."
+                    src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?q=80&w=1200&auto=format&fit=crop"
                     className="w-full h-[100px] object-cover rounded-xl"
                   />
 
                   <p className="text-sm text-neutral-600">
-                    Rooftop urban park with gardens and skyline views.
+                    Beautiful view of the bridge from Battery Spencer.
                   </p>
 
                 </div>
@@ -308,7 +321,7 @@ export default function Home() {
                   </p>
 
                   <img
-                    src="https://images.unsplash.com/..."
+                    src="https://images.pexels.com/photos/1190297/pexels-photo-1190297.jpeg"
                     className="w-full h-[100px] object-cover rounded-xl"
                   />
 
